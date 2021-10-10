@@ -55,6 +55,7 @@ func main() {
 	bucket := gcsClient.Bucket(targetBucket)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", cacheClient.Middleware(gcsproxy.GetGCSFile(targetDir, bucket, gcsproxy.CreateFileServer(targetDir))))
+	mux.Handle("/", cacheClient.Middleware(
+		gcsproxy.GetGCSFile(targetDir, bucket, gcsproxy.CSVQFilter(targetDir, gcsproxy.CreateFileServer(targetDir)))))
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
