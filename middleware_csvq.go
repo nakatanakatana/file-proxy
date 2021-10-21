@@ -2,7 +2,6 @@ package gcsproxy
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -74,7 +73,5 @@ func CSVQFilter(dir string, h http.Handler) http.Handler {
 		if err != nil {
 			return
 		}
-
-		fmt.Fprint(w, tmpDir)
 	})
 }
