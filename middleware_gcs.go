@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	mkdirPerm = 0755
+	mkdirPerm = 0o755
 )
 
 func DownloadGCSObject(dir, filePath string, bucket *storage.BucketHandle) error {
