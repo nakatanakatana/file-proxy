@@ -7,41 +7,61 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cloud.google.com/go/storage"
 )
 
 const (
-	mkdirPerm = 0o755
+	mkdirPerm = 0755
 )
 
 func DownloadGCSObject(dir, filePath string, bucket *storage.BucketHandle) error {
+	var (
+		objectReader *storage.Reader
+		err          error
+	)
 	ctx := context.Background()
-	object := bucket.Object(filePath)
 
-	or, err := object.NewReader(ctx)
+	targetPath := filePath
+	object := bucket.Object(targetPath)
+	objectReader, err = object.NewReader(ctx)
 	if err != nil {
-		return err
+		if strings.HasSuffix(targetPath, "/") {
+			log.Println("fallback to index.html")
+			targetPath += "index.html"
+			indexObject := bucket.Object(targetPath)
+			objectReader, err = indexObject.NewReader(ctx)
+			if err != nil {
+				log.Println("fallback error")
+				return err
+			}
+		} else {
+			return err
+		}
 	}
-	defer or.Close()
+	defer objectReader.Close()
 
-	fp := filepath.Join(dir, filePath)
+	fp := filepath.Join(dir, targetPath)
 
 	writeDir := filepath.Dir(fp)
 	if _, err := os.Stat(writeDir); os.IsNotExist(err) {
 		err = os.MkdirAll(writeDir, mkdirPerm)
 		if err != nil {
+			log.Println("MkdirAll")
 			return err
 		}
 	}
 
 	f, err := os.Create(fp)
 	if err != nil {
+		log.Println("Create")
 		return err
 	}
 
-	_, err = io.Copy(f, or)
+	_, err = io.Copy(f, objectReader)
 	if err != nil {
+		log.Println("Copy")
 		return err
 	}
 
@@ -53,9 +73,11 @@ func GetGCSFile(dir string, bucket *storage.BucketHandle, h http.Handler) http.H
 		path := r.URL.Path
 		if path != "" {
 			filePath := path[1:]
-			err := DownloadGCSObject(dir, filePath, bucket)
-			if err != nil {
-				log.Println("DownloadObjectError", dir, filePath, err)
+			if info, err := os.Stat(filepath.Join(dir, filePath)); err != nil || info.IsDir() {
+				err := DownloadGCSObject(dir, filePath, bucket)
+				if err != nil {
+					log.Println("DownloadObjectError", dir, filePath, err)
+				}
 			}
 		}
 		h.ServeHTTP(w, r)
