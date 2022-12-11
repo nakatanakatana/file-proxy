@@ -2,7 +2,7 @@ linters:
   disable:
     - exhaustivestruct
     - gochecknoglobals
-    - wrapcheck
+    - exhaustruct
 
     # deprecated
     - scopelint
@@ -27,3 +27,15 @@ linters:
 linters-settings:
   stylecheck:
     checks: ["all", "-ST1005"]
+  tagliatelle:
+    case:
+      use-field-name: true
+      rules:
+        json: snake
+  varnamelen:
+    ignore-decls:
+      - i int
+      - h http.Handler
+      - w http.ResponseWriter
+      - r *http.Request
+      - tt testcase

@@ -14,6 +14,9 @@ import (
 )
 
 const (
+	HTTPReadTimeout  = 300 * time.Second
+	HTTPWriteTimeout = 300 * time.Second
+
 	cacheCapacity  = 100
 	cacheClientTTL = 1 * time.Minute
 )
@@ -57,5 +60,13 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", cacheClient.Middleware(
 		gcsproxy.GetGCSFile(targetDir, bucket, gcsproxy.CSVQFilter(targetDir, gcsproxy.CreateFileServer(targetDir)))))
-	log.Fatal(http.ListenAndServe(":8080", mux))
+
+	svr := http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  HTTPReadTimeout,
+		WriteTimeout: HTTPWriteTimeout,
+	}
+
+	log.Fatal(svr.ListenAndServe())
 }

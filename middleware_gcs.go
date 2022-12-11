@@ -2,6 +2,7 @@ package gcsproxy
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,57 +13,55 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-const (
-	mkdirPerm = 0755
-)
+const mkdirPerm = 0o755
 
-func DownloadGCSObject(dir, filePath string, bucket *storage.BucketHandle) error {
+func DownloadGCSObject(ctx context.Context, dir, filePath string, bucket *storage.BucketHandle) error {
 	var (
 		objectReader *storage.Reader
 		err          error
 	)
-	ctx := context.Background()
 
 	targetPath := filePath
 	object := bucket.Object(targetPath)
+
 	objectReader, err = object.NewReader(ctx)
 	if err != nil {
 		if strings.HasSuffix(targetPath, "/") {
 			log.Println("fallback to index.html")
+
 			targetPath += "index.html"
 			indexObject := bucket.Object(targetPath)
+
 			objectReader, err = indexObject.NewReader(ctx)
 			if err != nil {
 				log.Println("fallback error")
-				return err
+
+				return fmt.Errorf("indexObject.NewReader: %w", err)
 			}
 		} else {
-			return err
+			return fmt.Errorf("object.NewReader: %w", err)
 		}
 	}
 	defer objectReader.Close()
 
-	fp := filepath.Join(dir, targetPath)
+	file := filepath.Join(dir, targetPath)
 
-	writeDir := filepath.Dir(fp)
+	writeDir := filepath.Dir(file)
 	if _, err := os.Stat(writeDir); os.IsNotExist(err) {
 		err = os.MkdirAll(writeDir, mkdirPerm)
 		if err != nil {
-			log.Println("MkdirAll")
-			return err
+			return fmt.Errorf("os.MkdirAll: %w", err)
 		}
 	}
 
-	f, err := os.Create(fp)
+	f, err := os.Create(file)
 	if err != nil {
-		log.Println("Create")
-		return err
+		return fmt.Errorf("os.Create: %w", err)
 	}
 
 	_, err = io.Copy(f, objectReader)
 	if err != nil {
-		log.Println("Copy")
-		return err
+		return fmt.Errorf("io.Copy; %w", err)
 	}
 
 	return nil
@@ -74,7 +73,7 @@ func GetGCSFile(dir string, bucket *storage.BucketHandle, h http.Handler) http.H
 		if path != "" {
 			filePath := path[1:]
 			if info, err := os.Stat(filepath.Join(dir, filePath)); err != nil || info.IsDir() {
-				err := DownloadGCSObject(dir, filePath, bucket)
+				err := DownloadGCSObject(r.Context(), dir, filePath, bucket)
 				if err != nil {
 					log.Println("DownloadObjectError", dir, filePath, err)
 				}

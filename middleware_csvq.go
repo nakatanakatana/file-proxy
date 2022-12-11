@@ -2,13 +2,13 @@ package gcsproxy
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/joho/sqltocsv"
-
 	// database-driver.
 	_ "github.com/mithrandie/csvq-driver"
 )
@@ -16,27 +16,32 @@ import (
 func CSVQ(repository string, query string) (*sql.Rows, error) {
 	reposPath, err := filepath.Abs(repository)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("filepath.Abs: %w", err)
 	}
 
-	db, err := sql.Open("csvq", reposPath)
+	database, err := sql.Open("csvq", reposPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sql.Open: %w", err)
 	}
 
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err := database.Close(); err != nil {
 			panic(err)
 		}
 	}()
 
-	return db.Query(query)
+	rows, err := database.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("database.Query: %w", err)
+	}
+
+	return rows, nil
 }
 
 func CSVQFilter(dir string, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query().Get("csvq")
-		if q == "" {
+		query := r.URL.Query().Get("csvq")
+		if query == "" {
 			h.ServeHTTP(w, r)
 
 			return
@@ -59,7 +64,7 @@ func CSVQFilter(dir string, h http.Handler) http.Handler {
 		paths := strings.Split(r.URL.Path, "/")
 		tmpDir := filepath.Join(dir, filepath.Join(paths[:len(paths)-1]...))
 
-		rows, err := CSVQ(tmpDir, q)
+		rows, err := CSVQ(tmpDir, query)
 		if err != nil || rows.Err() != nil {
 			h.ServeHTTP(w, r)
 

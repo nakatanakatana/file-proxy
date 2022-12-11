@@ -24,7 +24,9 @@ func TestDownloadGCSObject(t *testing.T) {
 	t.Run("exists path", func(t *testing.T) {
 		t.Parallel()
 		gcsBucket := gcsClient.Bucket("vector_config")
-		err = gcsproxy.DownloadGCSObject("./tmp", "hoge/fuga/vector.toml", gcsBucket)
+		ctx := context.Background()
+
+		err = gcsproxy.DownloadGCSObject(ctx, "./tmp", "hoge/fuga/vector.toml", gcsBucket)
 		if err != nil {
 			log.Println(err)
 			t.Fail()
