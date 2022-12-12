@@ -9,16 +9,11 @@ import (
 
 	"cloud.google.com/go/storage"
 	gcsproxy "github.com/nakatanakatana/gcs-proxy"
-	cache "github.com/victorspringer/http-cache"
-	"github.com/victorspringer/http-cache/adapter/memory"
 )
 
 const (
 	HTTPReadTimeout  = 300 * time.Second
 	HTTPWriteTimeout = 300 * time.Second
-
-	cacheCapacity  = 100
-	cacheClientTTL = 1 * time.Minute
 )
 
 func main() {
@@ -39,27 +34,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mem, err := memory.NewAdapter(
-		memory.AdapterWithAlgorithm(memory.LRU),
-		memory.AdapterWithCapacity(cacheCapacity),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cacheClient, err := cache.NewClient(
-		cache.ClientWithAdapter(mem),
-		cache.ClientWithTTL(cacheClientTTL),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	bucket := gcsClient.Bucket(targetBucket)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", cacheClient.Middleware(
-		gcsproxy.GetGCSFile(targetDir, bucket, gcsproxy.CSVQFilter(targetDir, gcsproxy.CreateFileServer(targetDir)))))
+	mux.Handle("/",
+		gcsproxy.GetGCSFile(targetDir, bucket,
+			gcsproxy.CSVQFilter(targetDir,
+				gcsproxy.CreateFileServer(targetDir)),
+		),
+	)
 
 	svr := http.Server{
 		Addr:         ":8080",
