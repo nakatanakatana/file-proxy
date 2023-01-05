@@ -1,4 +1,4 @@
-package gcsproxy_test
+package fproxy_test
 
 import (
 	"log"
@@ -6,15 +6,15 @@ import (
 
 	"github.com/joho/sqltocsv"
 	_ "github.com/mithrandie/csvq-driver"
-	gcsproxy "github.com/nakatanakatana/gcs-proxy"
+	fproxy "github.com/nakatanakatana/file-proxy"
 )
 
 func TestCSVQ(t *testing.T) {
 	t.Skip()
 	t.Parallel()
 
-	rows, err := gcsproxy.CSVQ("./tmp", "select * from sample limit 1")
-	// rows, err := gcsproxy.CSVQ("./tmp", "select 1")
+	rows, err := fproxy.CSVQ("./tmp", "select * from sample limit 1")
+	// rows, err := fproxy.CSVQ("./tmp", "select 1")
 	if err != nil || rows.Err() != nil {
 		t.Fail()
 	}

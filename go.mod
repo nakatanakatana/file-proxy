@@ -1,4 +1,4 @@
-module github.com/nakatanakatana/gcs-proxy
+module github.com/nakatanakatana/file-proxy
 
 go 1.16
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	gcsproxy "github.com/nakatanakatana/gcs-proxy"
+	fproxy "github.com/nakatanakatana/file-proxy"
 )
 
 const (
@@ -38,9 +38,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/",
-		gcsproxy.GetGCSFile(targetDir, bucket,
-			gcsproxy.CSVQFilter(targetDir,
-				gcsproxy.CreateFileServer(targetDir)),
+		fproxy.GetGCSFile(targetDir, bucket,
+			fproxy.CSVQFilter(targetDir,
+				fproxy.CreateFileServer(targetDir)),
 		),
 	)
 

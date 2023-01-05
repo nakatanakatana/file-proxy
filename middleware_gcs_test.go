@@ -1,4 +1,4 @@
-package gcsproxy_test
+package fproxy_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/storage"
-	gcsproxy "github.com/nakatanakatana/gcs-proxy"
+	fproxy "github.com/nakatanakatana/file-proxy"
 )
 
 func TestDownloadGCSObject(t *testing.T) {
@@ -26,7 +26,7 @@ func TestDownloadGCSObject(t *testing.T) {
 		gcsBucket := gcsClient.Bucket("vector_config")
 		ctx := context.Background()
 
-		err = gcsproxy.DownloadGCSObject(ctx, "./tmp", "hoge/fuga/vector.toml", gcsBucket)
+		err = fproxy.DownloadGCSObject(ctx, "./tmp", "hoge/fuga/vector.toml", gcsBucket)
 		if err != nil {
 			log.Println(err)
 			t.Fail()

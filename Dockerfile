@@ -1,4 +1,4 @@
-FROM golang:1.18 AS builder
+FROM golang:1.19 AS builder
 
 WORKDIR /app/source
 
@@ -19,4 +19,4 @@ FROM busybox:stable
 COPY --from=builder /app/output /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-CMD ["/app/gcs-proxy"]
+CMD ["/app/file-proxy"]

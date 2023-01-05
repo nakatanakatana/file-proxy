@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  IMAGE_NAME: gcs-proxy
+  IMAGE_NAME: file-proxy
 
 jobs:
   push_to_registry:
